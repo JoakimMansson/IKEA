@@ -16,6 +16,12 @@ class Vector():
         self.xPos = x
         self.yPos = y
 
+    def setX(self, x: int):
+        self.xPos = x
+
+    def setY(self, y: int):
+        self.yPos = y
+
     def getX(self):
         return self.xPos
 
@@ -64,7 +70,7 @@ def formatData():
                         allPoints[kommunCode].append(elements[i])
 
 
-def getMax(allPoints ,index: int) -> int:
+def getMaxPoints(allPoints ,index: int) -> int:
     currentMax = 0
     for key in allPoints:
         value = int(allPoints[key][index])
@@ -74,8 +80,8 @@ def getMax(allPoints ,index: int) -> int:
     
     return currentMax
 
-def getMin(allPoints ,index: int) -> int:
-    currentMin = 999999999
+def getMinPoints(allPoints ,index: int) -> int:
+    currentMin = float('inf')
     for key in allPoints:
         value = int(allPoints[key][index])
 
@@ -83,6 +89,31 @@ def getMin(allPoints ,index: int) -> int:
             currentMin = value
 
     return currentMin
+
+
+def getMaxCluster(cluster):
+    max = Vector(0, 0)
+    for i in range(len(cluster)):
+
+        if cluster[i].getX() > max.getX():
+            max.setX(cluster[i].getX())
+
+        if cluster[i].getY() > max.getY():
+            max.setY(cluster[i].getY())
+
+    return max
+
+def getMinCluster(cluster):
+    min = Vector(float('inf'), float('inf'))
+    for i in range(len(cluster)):
+
+        if cluster[i].getX() < min.getX():
+            min.setX(cluster[i].getX())
+
+        if cluster[i].getY() < min.getY():
+            min.setY(cluster[i].getY())
+
+    return min
 
 
 def setK(kVal: int):
@@ -94,26 +125,65 @@ def printCentroids(centroids):
         print("X: " + str(centroid.getX()) + ", Y: " + str(centroid.getY()))
 
 
-def formatClusters(index1: int, index2: int):
-    maxIndex1, minIndex1 = getMax(allPoints ,index1), getMin(allPoints, index1)
-    maxIndex2, minIndex2 = getMax(allPoints ,index2), getMin(allPoints, index2)
 
+
+def getVariation(clusterSet):
+    variations = []
+    for cluster in clusterSet:
+        cMax_X = getMaxCluster(cluster).getX()
+        cMin_Y = getMinCluster(cluster).getY()
+
+        variations.append(abs(cMax_X - cMin_Y))
+    
+    totalVariation = sum(variations)
+    return totalVariation
+
+
+
+def k_mean(nrSimulations: int,index1: int, index2: int):
+    
+    # Runs the 2D k-mean algorithm on 2 datasets
+    #
+    #Args:
+    #    nrSimulations: The number of times to simulate clusters.
+    #    index1 : Data 1 from the data.txt file.
+    #    index2 : Data 2 from the data.txt file.
+
+    lowestVariation = float('inf')
+    lowestVariationCluster = None
+    finalCentroids = None
+    for i in range(nrSimulations):
+        finalClusters, finalCentroids = simulateCluster(index1, index2)
+        clusterVariation = getVariation(finalClusters)
+        if clusterVariation < lowestVariation:
+            lowestVariation = clusterVariation
+            lowestVariationCluster = finalClusters
+
+
+    #Plotting
+
+    print(lowestVariationCluster)
+    for cluster in lowestVariationCluster:
+        colorRGB = (random.random(), random.random(), random.random())
+        for i in range(len(cluster)):
+            plt.scatter(cluster[i].getX(), cluster[i].getY(), color=colorRGB)
+            plt.pause(0.005)
+
+    for centroid in finalCentroids:
+        plt.scatter(centroid.getX(), centroid.getY(), marker="+", color=(0,0,0))
+        plt.pause(0.005)
+    plt.show()
+
+
+
+
+def simulateCluster(index1, index2):
+    maxIndex1, minIndex1 = getMaxPoints(allPoints ,index1), getMinPoints(allPoints, index1)
+    maxIndex2, minIndex2 = getMaxPoints(allPoints ,index2), getMinPoints(allPoints, index2)
     centroids = [Vector(random.randrange(minIndex1, maxIndex1), random.randrange(minIndex2, maxIndex2)) for _ in range(k)]
-    
-    print("Before: ")
-    printCentroids(centroids)
 
-    clusters = updateClusters(allPoints, centroids, index1, index2)
-    updateCentroids(centroids, clusters)
 
-    print("After: ")
-    printCentroids(centroids)
-
-    # Assigna datapunkter till närmsta centroid
-    # Beräkna nytt medelvärde för centroider
-    # Gör om tills centroiderna har konvergerat
-    
-    index = 0
+        
     prevCentroids = []
     while True:
 
@@ -121,14 +191,13 @@ def formatClusters(index1: int, index2: int):
         updateCentroids(centroids, clusters)
 
         if hasConverged(prevCentroids, centroids):
-            break
-        else:
+            print("Final centroids: ")
             printCentroids(centroids)
+            return clusters, centroids
+        else:
             prevCentroids = centroids
 
-    print("Finished centroids: ")
-    printCentroids(centroids)
-
+    
 
 
 # Creates a new cluster 
@@ -141,7 +210,7 @@ def updateClusters(allPoints, centroids, index1, index2):
         dataX = int(allPoints[key][index1])
         dataY = int(allPoints[key][index2])
 
-        currentMin = 999999
+        currentMin = float('inf')
         index = 0
         for i in range(len(centroids)):
             centroidX = centroids[i].getX()
@@ -193,24 +262,13 @@ def updateCentroids(centroids, newClusters):
 
 
 def hasConverged(prevCentroids, currentCentroids) -> bool:
-    # Initialize the counter variable
-    counter = 0
+    # Check if all current centroids have not moved significantly
+    # compared to the previous centroids
+    for c1, c2 in zip(currentCentroids, prevCentroids):
+        if c1.getX() - c2.getX() != 0 or c1.getY() - c2.getY() != 0:
+            return False
 
-    # Loop through the current and previous centroids
-    for c1 in currentCentroids:
-        for c2 in prevCentroids:
-            # Check if the centroids have not moved significantly
-            if (c1.getX() - c2.getX() < 100) and (c1.getY() - c2.getY() < 100):
-                # Increment the counter if they have not moved
-                counter = counter + 1
-
-    # Check if all centroids have not moved significantly
-    if counter == len(currentCentroids):
-        # Return True if they have not moved
-        return True
-
-    # Return False if any centroid has moved significantly
-    return False
+    return True
 
 
 def getEuclideanDist(x1, y1, x2, y2) -> float:
@@ -219,9 +277,8 @@ def getEuclideanDist(x1, y1, x2, y2) -> float:
     
 if __name__ == "__main__":
     formatData()
-    print(allPoints)
     setK(3)
     #Calculating k-mean for revenue and population
-    formatClusters(2, 4)
+    k_mean(2 ,2, 4)
 
 
