@@ -71,24 +71,16 @@ def formatData():
 
 
 def getMaxPoints(allPoints ,index: int) -> int:
-    currentMax = 0
-    for key in allPoints:
-        value = int(allPoints[key][index])
-
-        if value > currentMax:
-            currentMax = value
-    
-    return currentMax
+    # Get a list of all the values at the given index in the allPoints dictionary
+    values = [int(allPoints[key][index]) for key in allPoints]
+    # Return the maximum value from the list
+    return max(values)
 
 def getMinPoints(allPoints ,index: int) -> int:
-    currentMin = float('inf')
-    for key in allPoints:
-        value = int(allPoints[key][index])
-
-        if value < currentMin:
-            currentMin = value
-
-    return currentMin
+    # Get a list of all the values at the given index in the allPoints dictionary
+    values = [int(allPoints[key][index]) for key in allPoints]
+    # Return the minimum value from the list
+    return min(values)
 
 
 def getMaxCluster(cluster):
@@ -184,18 +176,18 @@ def simulateCluster(index1, index2):
 
 
         
-    prevCentroids = []
+    prevCentroids = None
     while True:
 
         clusters = updateClusters(allPoints, centroids, index1, index2)
         updateCentroids(centroids, clusters)
 
-        if hasConverged(prevCentroids, centroids):
+        if prevCentroids != None and hasConverged(prevCentroids, centroids):
             print("Final centroids: ")
             printCentroids(centroids)
             return clusters, centroids
-        else:
-            prevCentroids = centroids
+        
+        prevCentroids = centroids
 
     
 
@@ -225,6 +217,14 @@ def updateClusters(allPoints, centroids, index1, index2):
         # When finished comparing value insert with correct centroid
         newClusters[index].append(Vector(dataX, dataY))
 
+
+    # Checking edge case for when a centroid has bad
+    # starting position and is not assigned any points
+    for i in range(len(newClusters)):
+        if(len(newClusters[i]) == 0):
+            #newClusters[i].append(Vector(0, 0))
+            #ADD SOMETHING TO FIX THIS
+
     return newClusters
 
 
@@ -249,15 +249,10 @@ def updateCentroids(centroids, newClusters):
             sumY = sumY + elements.getY()
 
         # Calculate the average x and y coordinates
-        try:
-            avgX = sumX/len(newClusters[i])
-            avgY = sumY/len(newClusters[i])
-            # Update the position of the centroid
-            centroids[i].changePos(avgX, avgY)
-        except ZeroDivisionError:
-            # Handle the case where the cluster is empty
-            print(newClusters)
-            print("Division by zero in updateCentroids()")
+        avgX = sumX/len(newClusters[i])
+        avgY = sumY/len(newClusters[i])
+        # Update the position of the centroid
+        centroids[i].changePos(avgX, avgY)
 
 
 
@@ -277,8 +272,8 @@ def getEuclideanDist(x1, y1, x2, y2) -> float:
     
 if __name__ == "__main__":
     formatData()
-    setK(3)
+    setK(4)
     #Calculating k-mean for revenue and population
-    k_mean(2 ,2, 4)
+    k_mean(100 ,2, 4)
 
 
