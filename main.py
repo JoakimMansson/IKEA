@@ -28,18 +28,7 @@ class Vector():
     def getY(self):
         return self.yPos
 
-# key: Kommun_code
-# 0: Year
-# 1: Kommun_name
-# 2: Revenue
-# 3: Employee
-# 4: Population
-# 5: Population_University
-# 6: Percent_University
-# 7: Productivity
-# 8: SalesIndex
-# 9: Infrast
-# 10: Border
+
 
 
 class kommunDataSet():
@@ -51,40 +40,48 @@ class kommunDataSet():
     def hasNumbers(self, inputStr: str):
         return bool(re.search(r"\d", inputStr))
 
-    def formatData(self, allPoints: map):
+    def formatData(self, allPoints: dict):
         with open(self.data, "r") as f:
             f.readline() #Removes first unecessary line
-        
+
+            currentKey = 0
             while True:
                 line = f.readline()
                 if not line:
                     break
                 else:
                     elements = line.split()
+
+                    #Mergin cities that has names with space: [Upplands, Väsby] -> [Upplands Väsby,]
                     if not self.hasNumbers(elements[3]):
                         elements[2] = elements[2] + " " + elements[3]
                         del elements[3]
 
-                    kommunCode = ""
                     for i in range(len(elements)):
-                        if(i == 0):
-                            kommunCode = elements[0]
-                            allPoints[kommunCode] = []
+                        if currentKey in allPoints.keys():
+                            allPoints[currentKey].append(elements[i])
                         else:
-                            allPoints[kommunCode].append(elements[i])
+                            allPoints[currentKey] = []
+                            allPoints[currentKey].append(elements[i])
 
-    def getCorrespondingIndexFromCluster(self, data: map, clusters,index: int):
+                currentKey = currentKey + 1
+
+
+    def printCitiesFromCluster(self, data: dict, clusters, index: int):
         printStr = ""
         currentCluster = 0
         for cluster in clusters:
-            printStr = printStr + "\n Cluster " + str(currentCluster) + ": \n"
+            tempStr = ""
+            tempStr = tempStr + "\n Cluster " + str(currentCluster) + ": \n"
+            #Ex cluster: [[1,2,3], [4,5,6], [7,8,9]]
             for i in range(len(cluster)):
                 for key in data:
                     for j in range(len(data[key])):
-                        if self.hasNumbers(data[key][j]) and float(data[key][j]) == cluster[i].getX():
-                            printStr = printStr + " " + data[key][index] + ", "
+                        if self.hasNumbers(data[key][j]) and (float(data[key][j]) == cluster[i].getX() or float(data[key][j]) == cluster[i].getY()):
+                            tempStr = tempStr + " " + data[key][index] + ", "
                             break
-        
+            
+            printStr = printStr + tempStr
             currentCluster = currentCluster + 1
 
         print(printStr)
@@ -92,7 +89,7 @@ class kommunDataSet():
 
 class K_2D_Means():
 
-    def __init__(self, nrSimulations: int, allPoints: map, k: int, index1: int, index2: int):
+    def __init__(self, nrSimulations: int, allPoints: dict, k: int, index1: int, index2: int):
         self.nrSimulations = nrSimulations
         self.allPoints = allPoints
         self.k = k
@@ -149,15 +146,15 @@ class K_2D_Means():
     def getFinalClusters(self):
         return self.finalCluster
 
-    def getMaxPoints(self, allPoints ,index: int) -> int:
+    def getMaxPoints(self, allPoints: dict ,index: int) -> float:
         # Get a list of all the values at the given index in the allPoints dictionary
-        values = [int(allPoints[key][index]) for key in allPoints]
+        values = [float(allPoints[key][index]) for key in allPoints]
         # Return the maximum value from the list
         return max(values)
 
-    def getMinPoints(self, allPoints ,index: int) -> int:
+    def getMinPoints(self, allPoints ,index: int) -> float:
         # Get a list of all the values at the given index in the allPoints dictionary
-        values = [int(allPoints[key][index]) for key in allPoints]
+        values = [float(allPoints[key][index]) for key in allPoints]
         # Return the minimum value from the list
         return min(values)
 
@@ -240,8 +237,8 @@ class K_2D_Means():
         ]
 
         for key in allPoints:
-            dataX = int(allPoints[key][index1])
-            dataY = int(allPoints[key][index2])
+            dataX = float(allPoints[key][index1])
+            dataY = float(allPoints[key][index2])
 
             currentMin = float('inf')
             index = 0
@@ -316,18 +313,31 @@ class K_2D_Means():
         return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
-
-
+# allPoints dictionary
+# keys: 0 - 207
+# indexes:
+#   0: Kommun_code
+#   1: Year
+#   2: Kommun_name
+#   3: Revenue
+#   4: Employee
+#   5: Population
+#   6: Population_University
+#   7: Percent_University
+#   8: Productivity
+#   9: SalesIndex
+#   10: Infrast
+#   11: Border
     
 if __name__ == "__main__":
     allPoints = {}
     data = kommunDataSet("data.txt")
     data.formatData(allPoints)
     #Calculating k-mean for revenue and population
-    kMeans = K_2D_Means(nrSimulations=100, allPoints=allPoints, k=5, index1=2, index2=4)
+    kMeans = K_2D_Means(nrSimulations=100, allPoints=allPoints, k=5, index1=0, index2=5)
     
     finalCluster = kMeans.getFinalClusters()
-    data.getCorrespondingIndexFromCluster(allPoints, finalCluster, 1)
+    data.printCitiesFromCluster(allPoints, finalCluster, 2)
     
     kMeans.plotClusters()
     
