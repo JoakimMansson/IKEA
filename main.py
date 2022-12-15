@@ -70,6 +70,7 @@ class kommunDataSet():
     def printCitiesFromCluster(self, data: dict, clusters, index: int):
         printStr = ""
         currentCluster = 0
+        usedValues = {}
         for cluster in clusters:
             tempStr = ""
             tempStr = tempStr + "\n Cluster " + str(currentCluster) + ": \n"
@@ -77,8 +78,9 @@ class kommunDataSet():
             for i in range(len(cluster)):
                 for key in data:
                     for j in range(len(data[key])):
-                        if self.hasNumbers(data[key][j]) and (float(data[key][j]) == cluster[i].getX() or float(data[key][j]) == cluster[i].getY()):
+                        if self.hasNumbers(data[key][j]) and not (key in usedValues.keys()) and (float(data[key][j]) == cluster[i].getX() or float(data[key][j]) == cluster[i].getY()):
                             tempStr = tempStr + " " + data[key][index] + ", "
+                            usedValues[key] = None
                             break
             
             printStr = printStr + tempStr
