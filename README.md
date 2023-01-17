@@ -2,7 +2,7 @@
 An implementation of machine learning algortihm k-means to help IKEA expand to the right regions
 
 
-
+![Population_KommunCode](Population_KommunCode.JPG)
 
 
 Based on the image above output is: 
