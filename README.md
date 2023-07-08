@@ -1,5 +1,5 @@
 # IKEA
-An implementation of machine learning algortihm k-means to help IKEA expand to the right regions
+An implementation of machine learning algortihm k-means to help IKEA expand to the best possible regions
 
 
 ![Population_KommunCode](Population_KommunCode.JPG.jpg)
